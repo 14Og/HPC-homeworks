@@ -1,4 +1,4 @@
-# HPC Homework 2 — OpenMP
+# HPC Homework 1 — OpenMP
 
 Report covering the tasks from [docs/OpenMP_hw+tasks.pdf.pdf](docs/OpenMP_hw+tasks.pdf.pdf):
 `BugReduction`, `BugParFor`, `Pi`, `Car`, `LinearSolver` (`Axisb`), `LeastSquares`.
