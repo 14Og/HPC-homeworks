@@ -71,7 +71,7 @@ void benchmark(const MatrixXd &aA, const VectorXd &aB, size_t aNthreads)
 	std::cout << std::endl;
 }
 
-int main(int argc, char **argv, [[maybe_unused]] char **envp)
+int main(int argc, char **argv)
 {
 	Eigen::setNbThreads(1); // disable internal eigen omp parallelization
 

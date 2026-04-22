@@ -12,16 +12,16 @@ using Eigen::Index;
 using Eigen::VectorXd;
 
 struct LineParams {
-	double a;
-	double b;
+	double slope{0};
+	double intercept{0};
 };
 
-std::pair<VectorXd, VectorXd> makeNoisyLinearData(Index aN, LineParams aTrue, double aNoise, size_t aSeed = 42)
+std::pair<VectorXd, VectorXd> makeNoisyLinearData(Index aN, LineParams aTrueLine, double aNoise, size_t aSeed = 42)
 {
 	std::srand(aSeed);
 	VectorXd x     = VectorXd::Random(aN); // uniform [-1, 1]
 	VectorXd noise = VectorXd::Random(aN) * aNoise;
-	VectorXd y     = aTrue.a * x.array() + aTrue.b + noise.array();
+	VectorXd y     = aTrueLine.slope * x.array() + aTrueLine.intercept + noise.array();
 	return {std::move(x), std::move(y)};
 }
 
@@ -51,14 +51,19 @@ std::optional<LineParams> gradientDescent(
 
 		if (std::sqrt(gradA * gradA + gradB * gradB) < aTol) {
 			std::cout << "converged in " << it + 1 << " iterations\n";
-			return LineParams{a, b};
+			return {{a, b}};
 		}
 	}
 	return {};
 }
 
-void benchmark(const VectorXd &aX, const VectorXd &aY)
+void benchmark(const VectorXd &aX, const VectorXd &aY, size_t aNthreads)
 {
+	if (aNthreads < 1)
+		throw std::runtime_error("wrong num threads");
+
+	omp_set_num_threads(aNthreads);
+
 	[[maybe_unused]] auto t0 = omp_get_wtime();
 	auto line                = gradientDescent(aX, aY);
 	[[maybe_unused]] auto t1 = omp_get_wtime();
@@ -66,8 +71,11 @@ void benchmark(const VectorXd &aX, const VectorXd &aY)
 		std::cerr << "gradient descent did not converge" << std::endl;
 		return;
 	}
-	std::cout << "threads=" << omp_get_max_threads() << "  time=" << (t1 - t0) << " s" << "  a=" << line->a
-			  << "  b=" << line->b << "\n";
+	std::cout << "threads=" << omp_get_max_threads() << "\n";
+	std::cout << "  time=" << (t1 - t0) << " s" << "\n";
+	std::cout << "  a=" << line->slope << "\n";
+	std::cout << "  b=" << line->intercept << "\n";
+	std::cout << std::endl;
 }
 
 int main(int argc, char **argv)
@@ -88,8 +96,7 @@ int main(int argc, char **argv)
 
 	auto [x, y] = makeNoisyLinearData(1'000'000, {2.5, -1.0}, 0.1);
 
-	for (int t : threadCounts) {
-		omp_set_num_threads(t);
-		benchmark(x, y);
+	for (auto count : threadCounts) {
+		benchmark(x, y, count);
 	}
 }

@@ -1,8 +1,11 @@
 #include <omp.h>
 #include <stdio.h>
 
-int main([[maybe_unused]] int argc, [[maybe_unused]] char *argv[])
+int main()
 {
+	omp_set_dynamic(0);
+	omp_set_num_threads(16);
+
 	const size_t N     = 100;
 	const size_t chunk = 5;
 

@@ -19,10 +19,15 @@ double computePi(size_t aN)
 	return sum * step;
 }
 
-void benchmark(size_t aN)
+void benchmark(size_t aN, size_t aNthreads)
 {
+	if (aNthreads < 1)
+		throw std::runtime_error("wrong threads num");
+
+	omp_set_num_threads(aNthreads);
+
 	[[maybe_unused]] auto t0 = omp_get_wtime();
-	double pi                = computePi(aN);
+	auto pi                  = computePi(aN);
 	[[maybe_unused]] auto t1 = omp_get_wtime();
 	std::cout << std::format("threads={}  time={} s  pi={:.25f}\n", omp_get_max_threads(), t1 - t0, pi);
 }
@@ -43,8 +48,7 @@ int main(int argc, char **argv)
 
 	static constexpr size_t kN{100'000'000};
 
-	for (int t : threadCounts) {
-		omp_set_num_threads(t);
-		benchmark(kN);
+	for (auto count : threadCounts) {
+		benchmark(kN, count);
 	}
 }

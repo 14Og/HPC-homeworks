@@ -5,6 +5,7 @@
 #include <vector>
 #include <filesystem>
 #include <atomic>
+#include <string>
 
 static constexpr auto kFormat{"P3"};
 static inline std::filesystem::path media(MEDIA_DIR);
@@ -28,12 +29,12 @@ PPMImage readPPM(std::filesystem::path aPath)
 	if (!file)
 		throw std::runtime_error("no file at " + aPath.string());
 
-	PPMImage img;
 	std::string format;
 	file >> format;
 	if (format != kFormat)
 		throw std::runtime_error("wrong format: " + format);
 
+	PPMImage img;
 	file >> img.x >> img.y;
 	[[maybe_unused]] int maxColor;
 	file >> maxColor;
@@ -44,7 +45,6 @@ PPMImage readPPM(std::filesystem::path aPath)
 		file >> r >> g >> b;
 		img.data.emplace_back(static_cast<uint8_t>(r), static_cast<uint8_t>(g), static_cast<uint8_t>(b));
 	}
-	file.close();
 	return img;
 }
 
@@ -78,7 +78,7 @@ void animatePPM(std::filesystem::path aFramePath, const PPMImage &aImg, size_t a
 		}
 	}
 	if (errorFlag)
-		throw std::runtime_error("error during file creation!");
+		throw std::runtime_error("error during file creation");
 }
 
 void benchmark(std::filesystem::path aFramePath, const PPMImage &aImg, size_t aShifts, size_t aNthreads)
@@ -95,7 +95,7 @@ void benchmark(std::filesystem::path aFramePath, const PPMImage &aImg, size_t aS
 	std::cout << std::endl;
 }
 
-int main(int argc, char **argv, [[maybe_unused]] char **envp)
+int main(int argc, char **argv)
 {
 	std::vector<int> threadCounts;
 	threadCounts.reserve(argc - 1);
