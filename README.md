@@ -1,6 +1,6 @@
 # HPC Homework 2 — OpenMP
 
-Report covering the six required tasks from [docs/OpenMP_hw+tasks.pdf.pdf](docs/OpenMP_hw+tasks.pdf.pdf):
+Report covering the tasks from [docs/OpenMP_hw+tasks.pdf.pdf](docs/OpenMP_hw+tasks.pdf.pdf):
 `BugReduction`, `BugParFor`, `Pi`, `Car`, `LinearSolver` (`Axisb`), `LeastSquares`.
 
 ## Environment
@@ -24,7 +24,7 @@ cmake -B build && cmake --build build
 |---|---|
 | BugReduction | n/a |
 | BugParFor | n/a |
-| Pi | **7.6×** |
+| Pi | 7.6× |
 | Car | **7.8×** |
 | LinearSolver (Axisb) | 5.5× |
 | LeastSquares | 6.0× |
@@ -74,8 +74,6 @@ with $N = 10^8$ subintervals.
 | 8  | 0.082 | 5.08× |
 | 16 | 0.055 | **7.63×** |
 
-**Note on non-associativity**: the computed value of π shifts in the 13th decimal across thread counts (e.g. `3.14159265359042…` at 1 thread vs `3.14159265358988…` at 16 threads). This is expected — floating-point addition is not associative, and `reduction(+)` combines partial sums in a different order for each team size. The difference is well below the quadrature error of the algorithm.
-
 ## 4. Car — PPM column-shift animation (25 pts)
 
 Source: [tasks/Car.cc](tasks/Car.cc)
@@ -109,15 +107,11 @@ ffmpeg -framerate 30 -f image2 -c:v ppm -i 'frames/frame_%d' -i palette.png \
 rm palette.png
 ```
 
-- Two-pass: `palettegen` builds a per-animation 256-colour palette optimised for inter-frame differences; `paletteuse` then maps each frame onto it.
-- `format=rgb24` forces the RGB pipeline (no YUV subsampling), and `dither=none` keeps sharp edges without rainbow fringing on the car's outline.
-- The intermediate `palette.png` is removed at the end.
-
 ## 5. LinearSolver (Axisb) — Jacobi iterative solver (25 pts)
 
 Source: [tasks/LinearSolver.cc](tasks/LinearSolver.cc)
 
-Solves $A\mathbf{x} = \mathbf{b}$ for a dense $10000 \times 10000$ strictly diagonally dominant system using the Jacobi method. Matrix and vector storage use Eigen.
+Solves $A\mathbf{x} = \mathbf{b}$ for a dense strictly diagonally dominant system using the Jacobi method. Matrix and vector storage use Eigen.
 
 **Algorithm**:
 
@@ -135,7 +129,7 @@ for (Index i = 0; i < n; ++i) {
     diffSq    += d * d;
 }
 ```
-The per-iteration convergence check ($L_2$ norm of $\mathbf{x}_\text{new} - \mathbf{x}_\text{old}$) is merged into the same parallel loop, reusing the reduction.
+The per-iteration convergence check ($L^2$ norm of $\mathbf{x}_\text{new} - \mathbf{x}_\text{old}$) is merged into the same parallel loop, reusing the reduction.
 
 `Eigen::setNbThreads(1)` is called at startup so Eigen's internal threading doesn't nest inside our own.
 
@@ -145,7 +139,7 @@ The per-iteration convergence check ($L_2$ norm of $\mathbf{x}_\text{new} - \mat
 | 2  | 0.735 | 1.80× |
 | 4  | 0.465 | 2.84× |
 | 8  | 0.261 | 5.06× |
-| 16 | 0.242 | 5.46× |
+| 16 | 0.242 | **5.46×** |
 
 Scaling plateaus between 8 and 16 threads. This is **memory-bandwidth-limited** — each iteration reads the full 800 MB matrix plus two vectors, and the arithmetic intensity (FLOPs per byte) is too low to saturate 16 cores worth of compute. The residual $\|A\mathbf{x} - \mathbf{b}\| \approx 1.06 \cdot 10^{-8}$ is identical across all thread counts, confirming numerical determinism.
 
@@ -180,20 +174,8 @@ Each thread gets private copies of both accumulators; both are combined at the r
 | 2  | 8.50  | 1.63× |
 | 4  | 4.81  | 2.87× |
 | 8  | 2.32  | 5.95× |
-| 16 | 2.31  | 5.99× |
+| 16 | 2.31  | **5.99×** |
 
 Recovered parameters: $a = 2.4999$, $b = -0.999966$ — essentially the true values, with the small offset attributable to finite-sample noise. Iteration count is identical (209) across all thread counts.
 
 Scaling plateaus at 8 threads for the same reason as the Jacobi solver: the compute per element (two multiplies, two adds) is too light to stay CPU-bound once DRAM bandwidth is saturated.
-
----
-
-## Overall observations
-
-1. **Simple kernels scale best.** Pi and Car reach ≈ 7.6–7.8× on 16 threads because their arithmetic intensity is high relative to their memory traffic. They're CPU-bound.
-
-2. **Memory-bound kernels plateau early.** LinearSolver and LeastSquares stop improving past 8 threads because DRAM bandwidth becomes the bottleneck before compute does. Adding more cores beyond that point contributes nothing.
-
-3. **No speedup is truly linear.** Even the best-scaling task (Car, 7.8× on 16 threads) achieves ~49% efficiency — the rest is lost to thread-team creation, reduction synchronisation, and memory-hierarchy effects. This is consistent with Amdahl's law and the hardware reality that memory bandwidth doesn't scale with core count.
-
-4. **Determinism vs. non-associativity.** Jacobi and gradient-descent produce bit-identical results across thread counts because their reductions only feed a scalar convergence check, not the updated state. Pi's final value shifts in its last few digits between thread counts because the reduction order affects rounding. Worth calling out as a real-world tradeoff of `reduction(+)`.
