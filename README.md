@@ -12,6 +12,12 @@ Report covering the tasks from [docs/OpenMP_hw+tasks.pdf.pdf](docs/OpenMP_hw+tas
 | OpenMP | `libgomp` (GCC) |
 | Build | CMake, `-Wall -Wextra -Wpedantic -Werror` |
 
+**Dependencies** (Ubuntu):
+```sh
+sudo apt install libomp-dev libeigen3-dev
+```
+`libomp-dev` provides clang-compatible `omp.h` for IDE tooling (clangd); `libeigen3-dev` is required for `LinearSolver` and `LeastSquares`.
+
 Build and run:
 ```sh
 cmake -B build && cmake --build build
@@ -31,7 +37,7 @@ cmake -B build && cmake --build build
 
 ---
 
-## 1. BugReduction — dot product (5 pts)
+## 1. BugReduction — dot product
 
 Source: [tasks/BugReduction.c](tasks/BugReduction.c)
 
@@ -43,7 +49,7 @@ Source: [tasks/BugReduction.c](tasks/BugReduction.c)
 
 **OpenMP concept demonstrated**: `reduction(+ : sum)` gives each thread a private accumulator, then combines them with `+` at the end of the region. No race, no atomic needed.
 
-## 2. BugParFor — parallel for with thread ID (5 pts)
+## 2. BugParFor — parallel for with thread ID
 
 Source: [tasks/BugParFor.c](tasks/BugParFor.c)
 
@@ -54,7 +60,7 @@ Source: [tasks/BugParFor.c](tasks/BugParFor.c)
 
 **Fix**: changed the directive to `#pragma omp parallel for shared(a, b, c, chunk) private(i, tid) schedule(static, chunk)`, making the loop a real work-sharing construct with `tid` privatised per thread.
 
-## 3. Pi — numerical integration (15 pts)
+## 3. Pi — numerical integration
 
 Source: [tasks/Pi.cc](tasks/Pi.cc)
 
@@ -74,7 +80,9 @@ with $N = 10^8$ subintervals.
 | 8  | 0.082 | 5.08× |
 | 16 | 0.055 | **7.63×** |
 
-## 4. Car — PPM column-shift animation (25 pts)
+## 4. Car — PPM column-shift animation
+
+![car animation](media/car.gif)
 
 Source: [tasks/Car.cc](tasks/Car.cc)
 
@@ -98,7 +106,7 @@ No data mutation between frames → all frames can be generated independently in
 
 The workload is dominated by integer-to-string formatting (each pixel emits three decimal values), which is CPU-bound and parallelises well. Disk I/O does not bottleneck at this size (~45 MB total output across 303 frames).
 
-Final GIF assembly (not parallelised, external tool). Run from `media/` to reproduce `car.gif`:
+Final GIF assembly. Run from `media/` to reproduce `car.gif`:
 ```sh
 cd media && \
 ffmpeg -f image2 -c:v ppm -i 'frames/frame_%d' -vf "palettegen=stats_mode=diff" -y palette.png && \
@@ -107,7 +115,7 @@ ffmpeg -framerate 30 -f image2 -c:v ppm -i 'frames/frame_%d' -i palette.png \
 rm palette.png
 ```
 
-## 5. LinearSolver (Axisb) — Jacobi iterative solver (25 pts)
+## 5. LinearSolver (Axisb) — Jacobi iterative solver
 
 Source: [tasks/LinearSolver.cc](tasks/LinearSolver.cc)
 
@@ -143,7 +151,7 @@ The per-iteration convergence check ($L^2$ norm of $\mathbf{x}_\text{new} - \mat
 
 Scaling plateaus between 8 and 16 threads. This is **memory-bandwidth-limited** — each iteration reads the full 800 MB matrix plus two vectors, and the arithmetic intensity (FLOPs per byte) is too low to saturate 16 cores worth of compute. The residual $\|A\mathbf{x} - \mathbf{b}\| \approx 1.06 \cdot 10^{-8}$ is identical across all thread counts, confirming numerical determinism.
 
-## 6. LeastSquares — linear regression via gradient descent (25 pts)
+## 6. LeastSquares — linear regression via gradient descent
 
 Source: [tasks/LeastSquares.cc](tasks/LeastSquares.cc)
 
