@@ -60,7 +60,7 @@ Source: [tasks/Pi.cc](tasks/Pi.cc)
 
 Computes $\pi$ via midpoint-rule quadrature of
 
-$$\int_0^1 \frac{4}{1 + x^2}\,dx = \pi$$
+$$\int_0^1 \frac{4}{1 + x^2}dx = \pi$$
 
 with $N = 10^8$ subintervals.
 
@@ -155,7 +155,7 @@ $$L(a, b) = \frac{1}{N} \sum_{i=1}^{N} (a x_i + b - y_i)^2$$
 
 whose gradients both reduce to a sum over the residual $r_i = a x_i + b - y_i$:
 
-$$\frac{\partial L}{\partial a} = \frac{2}{N} \sum_{i=1}^{N} x_i \, r_i \qquad \frac{\partial L}{\partial b} = \frac{2}{N} \sum_{i=1}^{N} r_i$$
+$$\frac{\partial L}{\partial a} = \frac{2}{N} \sum_{i=1}^{N} x_i r_i \qquad \frac{\partial L}{\partial b} = \frac{2}{N} \sum_{i=1}^{N} r_i$$
 
 **Parallelization**: one pass over the data computes both gradients simultaneously using OpenMP's **multi-variable reduction** clause:
 ```cpp
