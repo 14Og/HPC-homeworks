@@ -1,7 +1,7 @@
-# HPC Homework 1 — OpenMP
+# HPC Homework 2 — MPI
 
-Report covering the tasks from [docs/OpenMP_hw+tasks.pdf.pdf](docs/OpenMP_hw+tasks.pdf.pdf):
-`BugReduction`, `BugParFor`, `Pi`, `Car`, `LinearSolver` (`Axisb`), `LeastSquares`.
+Report covering the tasks:
+`PingPong`, `Cellular Automata 1-d`.
 
 ## Environment
 
@@ -9,181 +9,93 @@ Report covering the tasks from [docs/OpenMP_hw+tasks.pdf.pdf](docs/OpenMP_hw+tas
 |---|---|
 | CPU | Intel Core Ultra 9 285H, 16 physical cores, 1 thread/core |
 | Compiler | gcc/g++ 13 |
-| OpenMP | `libgomp` (GCC) |
+| Framework | OpenMPI |
 | Build | CMake, `-Wall -Wextra -Wpedantic -Werror` |
-
-**Dependencies** (Ubuntu):
-```sh
-sudo apt install libomp-dev libeigen3-dev
-```
-`libomp-dev` provides clang-compatible `omp.h` for IDE tooling (clangd); `libeigen3-dev` is required for `LinearSolver` and `LeastSquares`.
 
 Build and run:
 ```sh
 cmake -B build && cmake --build build
-./build/tasks/Pi 1 2 4 8 16          # most tasks take a thread-count list
+
+# Ping Pong Tasks
+mpirun -n 4 ./build/PingPong
+mpirun -n 2 ./build/PingPong2
+
+# Automata Task (e.g. Rule 110, Static boundaries, 100 cells, 50 steps, print grid)
+mpirun -n 4 ./build/Automata 110 --static 100 50 1
 ```
 
 ## Summary
 
-| Task | Speedup (1 → 16 threads) |
+| Task | Speedup (1 → 8 processes) |
 |---|---|
-| BugReduction | n/a |
-| BugParFor | n/a |
-| Pi | 7.6× |
-| Car | **7.8×** |
-| LinearSolver (Axisb) | 5.5× |
-| LeastSquares | 6.0× |
+| PingPong | n/a (Communication Bound) |
+| Automata | **3.15×** |
 
 ---
 
-## 1. BugReduction — dot product
+## 1. Ping-Pong
 
-Source: [tasks/BugReduction.c](tasks/BugReduction.c)
+### 1.1 Sequential Messages (Variable Length)
+Source: [tasks/PingPong.cc](tasks/PingPong.cc)
 
-**Bugs in the original**:
-1. `#pragma omp for reduction(+ : sum)` was placed inside a function called **outside any parallel region** — an orphaned worksharing construct that falls back to sequential execution.
-2. `main` discarded the return value of `dotprod` and printed its own (uninitialised) `sum = 0`.
+Simulates the random passing of a message between processors. Each pass appends the receiver's rank, growing the message length. 
+A unified event loop using `MPI_ANY_SOURCE` paired with `MPI_TAG` safely manages receiving randomly ordered messages until a final `TAG_DONE` broadcast cleanly terminates all ranks after exactly N passes.
 
-**Fix**: combined into `#pragma omp parallel for reduction(+ : sum)` so the directive both creates the team and distributes the loop. The caller now uses the returned value.
+### 1.2 Latency and Bandwidth (Fixed Length)
+Source: [tasks/PingPong2.cc](tasks/PingPong2.cc)
 
-**OpenMP concept demonstrated**: `reduction(+ : sum)` gives each thread a private accumulator, then combines them with `+` at the end of the region. No race, no atomic needed.
+To properly track scaling, this script measures Ping-Pong back-and-forth passes exactly 10,000 times between 2 ranks, isolating `MPI_Ssend` and `MPI_Recv` performance.
 
-## 2. BugParFor — parallel for with thread ID
-
-Source: [tasks/BugParFor.c](tasks/BugParFor.c)
-
-**Bugs in the original**:
-1. `#pragma omp parallel` (no `for`) wrapped a plain `for` loop → every thread ran the full loop, producing N × `num_threads` iterations instead of N.
-2. `schedule(static, chunk)` attached to a bare `omp parallel` is a semantic error — the clause belongs on a work-sharing construct.
-3. `tid` was a shared variable, racing between threads.
-
-**Fix**: changed the directive to `#pragma omp parallel for shared(a, b, c, chunk) private(i, tid) schedule(static, chunk)`, making the loop a real work-sharing construct with `tid` privatised per thread.
-
-## 3. Pi — numerical integration
-
-Source: [tasks/Pi.cc](tasks/Pi.cc)
-
-Computes $\pi$ via midpoint-rule quadrature of
-
-$$\int_0^1 \frac{4}{1 + x^2}dx = \pi$$
-
-with $N = 10^8$ subintervals.
-
-**Parallelization**: a single `#pragma omp parallel for reduction(+ : sum) schedule(static)` wraps the sum. Every iteration is a division and a couple of adds; no dependencies between iterations.
-
-| threads | time (s) | speedup |
+| Size (Bytes) | Time per pass (µs) | Bandwidth (MB/s) |
 |---|---|---|
-| 1  | 0.418 | 1.00× |
-| 2  | 0.249 | 1.68× |
-| 4  | 0.145 | 2.89× |
-| 8  | 0.082 | 5.08× |
-| 16 | 0.055 | **7.63×** |
+| 0 | 0.967 | 0.0 |
+| 4 | 0.996 | 3.8 |
+| 1024 | 0.727 | 1342.7 |
+| 1048576 | 112.5 | 8882.9 |
+| 4194304 | 421.0 | 9499.0 |
 
-## 4. Car — PPM column-shift animation
+*Zero-byte latency (the absolute lowest overhead of the MPI layer) is approximately **0.96 µs** on this system.*
 
-![car animation](media/car.gif)
+---
 
-Source: [tasks/Car.cc](tasks/Car.cc)
+## 2. Cellular Automata 1-d
 
-Reads `car.ppm`, then produces `width` frames, each with every column cyclically shifted left by one more than the previous — giving the illusion of forward motion. The frames are stitched into `media/car.gif` with `ffmpeg`.
+Source: [tasks/Automata.cc](tasks/Automata.cc)
 
-**Algorithmic choice**: rather than physically rotating pixel data each frame, the shift is implemented as an **index offset** on read:
+Simulates 1-D Cellular Automata using bit-shifted Wolfram Rule Numbers (0-255). Supports periodic (circular) and static (zero) boundary conditions.
+
+**Parallelization**: 
+The computational domain is divided roughly evenly across ranks. Each rank provisions two additional **Ghost Cells** at its local array edges.
 ```cpp
-auto srcNum = (x + aImg.x - shift % aImg.x) % aImg.x;
+// Left & Right internal boundary transfers
+MPI_Sendrecv(&current[localSize], 1, MPI_INT, rightNeighbor, 0,
+             &current[0], 1, MPI_INT, leftNeighbor, 0, ...);
+MPI_Sendrecv(&current[1], 1, MPI_INT, leftNeighbor, 1,
+             &current[localSize + 1], 1, MPI_INT, rightNeighbor, 1, ...);
 ```
-No data mutation between frames → all frames can be generated independently in parallel.
+At the start of every time step, processes exchange their overlapping edges. Once ghost cells are populated, the internal loop runs freely independent of the network.
 
-**Parallelization**: `#pragma omp parallel for` over the outer frame loop. Each thread opens its own `ofstream` (thread-local stack variable), writes its own uniquely-named file, and reads from the shared, immutable `PPMImage`. A `std::atomic_bool` error flag is used to propagate file-open failures out of the parallel region (OpenMP cannot carry exceptions across region boundaries).
+### Interesting Outputs
+Below are rendered visualizations of three popular outputs (Rule 110, Rule 102, and Rule 77):
 
-| threads | time (s) | speedup |
+<div>
+  <img src="assets/rule_110.png" width="30%" alt="Rule 110">
+  <img src="assets/rule_102.png" width="30%" alt="Rule 102">
+  <img src="assets/rule_77.png" width="30%" alt="Rule 77">
+</div>
+
+### Speedup
+
+Script: [scripts/benchmark_automata.sh](scripts/benchmark_automata.sh)
+
+| processes | time (s) | speedup |
 |---|---|---|
-| 1  | 1.734 | 1.00× |
-| 2  | 0.909 | 1.91× |
-| 4  | 0.498 | 3.48× |
-| 8  | 0.305 | 5.69× |
-| 16 | 0.222 | **7.81×** |
+| 1  | 5.686 | 1.00× |
+| 2  | 3.140 | 1.81× |
+| 4  | 2.033 | 2.80× |
+| 8  | 1.808 | 3.15× |
+| 16 | 2.559 | 2.22× |
 
-The workload is dominated by integer-to-string formatting (each pixel emits three decimal values), which is CPU-bound and parallelises well. Disk I/O does not bottleneck at this size (~45 MB total output across 303 frames).
+**Performance Note**: As the process count scales from 1 to 8, the problem nicely fragments, yielding a ~3.15x speedup. Beyond 8 processes on this machine, the message-passing synchronization overhead outpaces the arithmetic computation, resulting in a slowdown.
 
-Final GIF assembly. Run from `media/` to reproduce `car.gif`:
-```sh
-cd media && \
-ffmpeg -f image2 -c:v ppm -i 'frames/frame_%d' -vf "palettegen=stats_mode=diff" -y palette.png && \
-ffmpeg -framerate 30 -f image2 -c:v ppm -i 'frames/frame_%d' -i palette.png \
-       -lavfi "[0:v]format=rgb24[v];[v][1:v]paletteuse=dither=none" -y car.gif && \
-rm palette.png
-```
-
-## 5. LinearSolver (Axisb) — Jacobi iterative solver
-
-Source: [tasks/LinearSolver.cc](tasks/LinearSolver.cc)
-
-Solves $A\mathbf{x} = \mathbf{b}$ for a dense strictly diagonally dominant system using the Jacobi method. Matrix and vector storage use Eigen.
-
-**Algorithm**:
-
-$$x_i^{(k+1)} = \frac{1}{a_{ii}} \left( b_i - \sum_{j \ne i} a_{ij} \cdot x_j^{(k)} \right)$$
-
-Each $x_i^{(k+1)}$ depends only on $\mathbf{x}^{(k)}$ (the previous iteration's full vector), so within one iteration the $n$ row updates are fully independent. Ping-pong buffers (`xOld`, `xNew`) prevent accidentally turning this into Gauss-Seidel.
-
-**Parallelization**:
-```cpp
-#pragma omp parallel for reduction(+ : diffSq) schedule(static)
-for (Index i = 0; i < n; ++i) {
-    double sum = aA.row(i).dot(xOld) - aA(i, i) * xOld(i);
-    xNew(i)    = (aB(i) - sum) / aA(i, i);
-    double d   = xNew(i) - xOld(i);
-    diffSq    += d * d;
-}
-```
-The per-iteration convergence check ($L^2$ norm of $\mathbf{x}_\text{new} - \mathbf{x}_\text{old}$) is merged into the same parallel loop, reusing the reduction.
-
-`Eigen::setNbThreads(1)` is called at startup so Eigen's internal threading doesn't nest inside our own.
-
-| threads | time (s) | speedup |
-|---|---|---|
-| 1  | 1.321 | 1.00× |
-| 2  | 0.735 | 1.80× |
-| 4  | 0.465 | 2.84× |
-| 8  | 0.261 | 5.06× |
-| 16 | 0.242 | **5.46×** |
-
-Scaling plateaus between 8 and 16 threads. This is **memory-bandwidth-limited** — each iteration reads the full 800 MB matrix plus two vectors, and the arithmetic intensity (FLOPs per byte) is too low to saturate 16 cores worth of compute. The residual $\|A\mathbf{x} - \mathbf{b}\| \approx 1.06 \cdot 10^{-8}$ is identical across all thread counts, confirming numerical determinism.
-
-## 6. LeastSquares — linear regression via gradient descent
-
-Source: [tasks/LeastSquares.cc](tasks/LeastSquares.cc)
-
-Fits $f(x) = a x + b$ to $N = 10^6$ noisy samples generated from $y_i = 2.5 \, x_i - 1 + \mathrm{noise}()$.
-
-**Algorithm**: gradient descent on the MSE loss
-
-$$L(a, b) = \frac{1}{N} \sum_{i=1}^{N} (a x_i + b - y_i)^2$$
-
-whose gradients both reduce to a sum over the residual $r_i = a x_i + b - y_i$:
-
-$$\frac{\partial L}{\partial a} = \frac{2}{N} \sum_{i=1}^{N} x_i r_i \qquad \frac{\partial L}{\partial b} = \frac{2}{N} \sum_{i=1}^{N} r_i$$
-
-**Parallelization**: one pass over the data computes both gradients simultaneously using OpenMP's **multi-variable reduction** clause:
-```cpp
-#pragma omp parallel for reduction(+ : gradA, gradB) schedule(static)
-for (Index i = 0; i < n; ++i) {
-    double r = a * aX(i) + b - aY(i);
-    gradA += aX(i) * r;
-    gradB += r;
-}
-```
-Each thread gets private copies of both accumulators; both are combined at the region exit.
-
-| threads | time (s) | speedup |
-|---|---|---|
-| 1  | 13.82 | 1.00× |
-| 2  | 8.50  | 1.63× |
-| 4  | 4.81  | 2.87× |
-| 8  | 2.32  | 5.95× |
-| 16 | 2.31  | **5.99×** |
-
-Recovered parameters: $a = 2.4999$, $b = -0.999966$ — essentially the true values, with the small offset attributable to finite-sample noise. Iteration count is identical (209) across all thread counts.
-
-Scaling plateaus at 8 threads for the same reason as the Jacobi solver: the compute per element (two multiplies, two adds) is too light to stay CPU-bound once DRAM bandwidth is saturated.
+![Automata Speedup](assets/speedup.png)
