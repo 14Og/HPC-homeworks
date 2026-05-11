@@ -1,28 +1,11 @@
 foreach(src
-    BugReduction.c
-    BugParFor.c
+    PingPong.cc  
+    PingPong2.cc
+    Automata.cc
 )
     get_filename_component(target ${src} NAME_WE)
     add_executable(${target} ${src})
-    target_link_libraries(${target} PRIVATE OpenMP::OpenMP_C m)
+    target_link_libraries(${target} PRIVATE MPI::MPI_CXX)
 endforeach()
 
-foreach(src
-    Pi.cc
-    Car.cc
-)
-    get_filename_component(target ${src} NAME_WE)
-    add_executable(${target} ${src})
-    target_link_libraries(${target} PRIVATE OpenMP::OpenMP_CXX)
-endforeach()
-
-foreach(src
-    LinearSolver.cc
-    LeastSquares.cc
-)
-    get_filename_component(target ${src} NAME_WE)
-    add_executable(${target} ${src})
-    target_link_libraries(${target} PRIVATE OpenMP::OpenMP_CXX Eigen3::Eigen)
-endforeach()
-
-add_compile_definitions(MEDIA_DIR="${PROJECT_SOURCE_DIR}/media")
+target_compile_definitions(Automata PRIVATE HIST="${PROJECT_SOURCE_DIR}/assets/automata_history.csv")
