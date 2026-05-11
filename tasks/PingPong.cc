@@ -18,6 +18,12 @@ int main(int argc, char **argv)
 	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 	MPI_Comm_size(MPI_COMM_WORLD, &size);
 
+	if (size < 2) {
+		std::cerr << "comm size is too small: " << size << std::endl;
+		MPI_Finalize();
+		return 1;
+	}
+
 	// Seed random generator differently for each process
 	std::mt19937 gen(rank + std::chrono::system_clock::now().time_since_epoch().count());
 	std::uniform_int_distribution<> dist(0, size - 1);
