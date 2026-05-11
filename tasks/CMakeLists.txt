@@ -5,6 +5,7 @@ foreach(src
 )
     get_filename_component(target ${src} NAME_WE)
     add_executable(${target} ${src})
-    target_include_directories(${target} PRIVATE ${MPI_INCLUDE_PATH})
     target_link_libraries(${target} PRIVATE MPI::MPI_CXX)
 endforeach()
+
+target_compile_definitions(Automata PRIVATE HIST="${PROJECT_SOURCE_DIR}/assets/automata_history.csv")

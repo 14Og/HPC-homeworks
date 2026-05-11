@@ -5,6 +5,9 @@
 #include <string>
 #include <cstdlib>
 #include <fstream>
+#include <filesystem>
+
+static inline std::filesystem::path histPath{HIST};
 
 int main(int argc, char **argv)
 {
@@ -90,9 +93,9 @@ int main(int argc, char **argv)
 			recvCounts.resize(size);
 			displs.resize(size);
 			fullGrid.resize(totalCells);
-			outFile.open("assets/automata_history.csv");
+			outFile.open(histPath);
 			if (!outFile.is_open()) {
-				std::cerr << "Error: Could not open automata_history.csv for writing.\n";
+				std::cerr << "Error: Could not open " << histPath.string() << " for writing" << std::endl;
 				MPI_Abort(MPI_COMM_WORLD, 1);
 			}
 		}

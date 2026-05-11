@@ -1,5 +1,6 @@
 #!/bin/bash
 
+mkdir -p assets
 OUTPUT_CSV="assets/speedup.csv"
 echo "Processes,Time_Sec" > $OUTPUT_CSV
 
