@@ -15,19 +15,12 @@ int main(int argc, char **argv)
 	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 	MPI_Comm_size(MPI_COMM_WORLD, &size);
 
-	if (size < 2) {
+	if (size != 2) {
 		if (rank == 0) {
-			std::cerr << "This program requires at least 2 processes." << std::endl;
+			std::cerr << "This program requires exactly 2 processes." << std::endl;
 		}
 		MPI_Finalize();
 		return 1;
-	}
-
-	// We only need rank 0 and rank 1 for a benchmark.
-	// Other ranks will just exit or wait.
-	if (rank > 1) {
-		MPI_Finalize();
-		return 0;
 	}
 
 	if (rank == 0) {
