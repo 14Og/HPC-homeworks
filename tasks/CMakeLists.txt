@@ -1,11 +1,20 @@
-foreach(src
-    PingPong.cc  
-    PingPong2.cc
-    Automata.cc
+set(TASKS laplace filter histogram)
+set(OPENCV_TASKS filter histogram)
+
+add_compile_definitions(
+    OUT_DIR="${PROJECT_SOURCE_DIR}/assets"
+    MEDIA_DIR="${PROJECT_SOURCE_DIR}/media"
+    BLUR_DIR="${PROJECT_SOURCE_DIR}/assets/blur"
+    HIST_DIR="${PROJECT_SOURCE_DIR}/assets/hist"
+    GRAY_DIR="${PROJECT_SOURCE_DIR}/assets/gray"
 )
-    get_filename_component(target ${src} NAME_WE)
-    add_executable(${target} ${src})
-    target_link_libraries(${target} PRIVATE MPI::MPI_CXX)
+
+foreach(TASK ${TASKS})
+    add_executable(${TASK} ${TASK}/${TASK}.cu)
+    set_target_properties(${TASK} PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
+    target_include_directories(${TASK} PRIVATE ${CMAKE_SOURCE_DIR}/tasks)
 endforeach()
 
-target_compile_definitions(Automata PRIVATE HIST="${PROJECT_SOURCE_DIR}/assets/automata_history.csv")
+foreach(TASK ${OPENCV_TASKS})
+    target_link_libraries(${TASK} PRIVATE ${OPENCV_LIBS})
+endforeach()

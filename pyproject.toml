@@ -1,5 +1,5 @@
 [project]
-name = "hw2"
+name = "hpc-hw"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
@@ -9,4 +9,5 @@ dependencies = [
     "numpy>=2.4.4",
     "pyqt5>=5.15.11",
     "scienceplots>=2.2.1",
+    "wrapt>=2.2.1",
 ]

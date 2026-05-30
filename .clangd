@@ -1,0 +1,25 @@
+CompileFlags:
+  CompilationDatabase: build
+  Remove:
+    - "-forward-unknown-to-host-compiler"
+    - "-arch=*"
+    - "-rdc=*"
+    - "--generate-code=*"
+    - "-ccbin*"
+  Add:
+    - "--cuda-path=/usr/local/cuda"
+    - "--cuda-gpu-arch=sm_60"
+    - "-std=c++20"
+Index:
+  Background: Build
+InlayHints:
+  BlockEnd: No
+  Designators: Yes
+  Enabled: Yes
+  ParameterNames: Yes
+  DeducedTypes: Yes
+  TypeNameLimit: 24
+Hover:
+  ShowAKA: Yes
+
+
