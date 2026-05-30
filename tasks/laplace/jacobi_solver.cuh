@@ -1,18 +1,18 @@
-#ifndef TASKS_LAPLACE_JACOBI_SOLVER_HH_
-#define TASKS_LAPLACE_JACOBI_SOLVER_HH_
+#ifndef TASKS_LAPLACE_JACOBI_SOLVER_CUH_
+#define TASKS_LAPLACE_JACOBI_SOLVER_CUH_
 
 #include <algorithm>
 #include <cstdio>
 #include <vector>
-#include <cmath>
 
-#include "check.hh"
-#include "grid.hh"
+#include "check.cuh"
+#include "grid.cuh"
 #include "jacobi_kernels.cuh"
 
 class JacobiSolver {
 public:
-	JacobiSolver(float aTol, int aMaxIter, int blockSize = 256) : tol(aTol), maxIter(aMaxIter), blockSize(blockSize)
+	JacobiSolver(float aTol, int aMaxIter, int blockSize = 256) :
+		tol(aTol), maxIter(aMaxIter), blockSize(blockSize)
 	{
 	}
 
@@ -39,7 +39,8 @@ public:
 				g.devCurr(), g.devNext(), dBlockMaxes, g.size());
 			g.swapBuffers();
 
-			CUDA_CHECK(cudaMemcpy(hBlockMaxes.data(), dBlockMaxes, numBlocks * sizeof(float), cudaMemcpyDeviceToHost));
+			CUDA_CHECK(cudaMemcpy(hBlockMaxes.data(), dBlockMaxes, numBlocks * sizeof(float),
+				cudaMemcpyDeviceToHost));
 			auto maxDiff = *std::max_element(hBlockMaxes.begin(), hBlockMaxes.end());
 			if (maxDiff < tol) {
 				++iter;
@@ -57,4 +58,4 @@ private:
 	int blockSize{0};
 };
 
-#endif /* TASKS_LAPLACE_JACOBI_SOLVER_HH_ */
+#endif /* TASKS_LAPLACE_JACOBI_SOLVER_CUH_ */

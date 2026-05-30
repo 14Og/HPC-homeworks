@@ -8,7 +8,7 @@ UseTab:         AlignWithSpaces
 
 # Align
 AccessModifierOffset: -4
-ColumnLimit:     120
+ColumnLimit:     100
 AlignAfterOpenBracket: DontAlign
 AlignConsecutiveAssignments: AcrossEmptyLines
 

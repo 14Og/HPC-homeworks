@@ -1,5 +1,5 @@
-#ifndef TASKS_LAPLACE_GRID_HH_
-#define TASKS_LAPLACE_GRID_HH_
+#ifndef TASKS_LAPLACE_GRID_CUH_
+#define TASKS_LAPLACE_GRID_CUH_
 
 #include <cstdlib>
 #include <vector>
@@ -7,7 +7,7 @@
 
 #include <cuda_runtime.h>
 
-#include "check.hh"
+#include "check.cuh"
 
 // 2D grid owning two ping-pong device buffers and a host-side copy.
 //
@@ -60,12 +60,14 @@ public:
 
 	void upload()
 	{
-		for (auto pointer : dBuffers) CUDA_CHECK(cudaMemcpy(pointer, hData.data(), bufSize(), cudaMemcpyHostToDevice));
+		for (auto pointer : dBuffers)
+			CUDA_CHECK(cudaMemcpy(pointer, hData.data(), bufSize(), cudaMemcpyHostToDevice));
 	}
 
 	void download()
 	{
-		for (auto pointer : dBuffers) CUDA_CHECK(cudaMemcpy(hData.data(), pointer, bufSize(), cudaMemcpyDeviceToHost));
+		for (auto pointer : dBuffers)
+			CUDA_CHECK(cudaMemcpy(hData.data(), pointer, bufSize(), cudaMemcpyDeviceToHost));
 	}
 
 	float *devCurr()
@@ -109,4 +111,4 @@ private:
 	size_t currIdx{0};
 };
 
-#endif /* TASKS_LAPLACE_GRID_HH_ */
+#endif /* TASKS_LAPLACE_GRID_CUH_ */

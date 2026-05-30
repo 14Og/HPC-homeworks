@@ -1,20 +1,18 @@
 #include <cstdio>
 #include <cstdlib>
-#include <cmath>
 #include <fstream>
 #include <string>
-#include <vector>
 #include <filesystem>
 
 #include <cuda_runtime.h>
 
-#include "check.hh"
-#include "grid.hh"
+#include "check.cuh"
+#include "grid.cuh"
 #include "jacobi_solver.cuh"
 
 static inline std::filesystem::path outDir{OUT_DIR};
 
-void save_csv(const std::string &path, const Grid &g)
+void saveCSV(const std::string &path, const Grid &g)
 {
 	std::ofstream f(path);
 	for (int iy = 0; iy < g.size(); ++iy) {
@@ -33,7 +31,7 @@ int main()
 	static constexpr float kTol{1e-5f};
 	static constexpr size_t kMaxIter{100'000};
 
-	Grid g(kN, 1, 1, 0, 0);
+	Grid g(kN, 0, 1, 0, 0);
 	g.upload();
 
 	cudaEvent_t start, stop;
@@ -54,7 +52,7 @@ int main()
 	std::printf("Converged in %d iterations in %.1f ms\n", iters, ms);
 
 	g.download();
-	save_csv(outDir / "laplace_result.csv", g);
+	saveCSV(outDir / "laplace_result.csv", g);
 
 	return 0;
 }

@@ -41,11 +41,11 @@ The solution is exported to CSV and visualized as a heatmap:
 
 Source: [tasks/filter/](tasks/filter/)
 
-Applies **box** and **Gaussian** blur filters to an image using 2D convolution on the GPU, for all odd kernel sizes from 11 to 111.
+Applies **box** and **Gaussian** blur filters to an image using 2D convolution on the GPU, for all odd kernel sizes from 3 to 21.
 
 **Kernel**: each thread processes one output pixel across all 3 BGR channels. The convolution stencil is stored in `__constant__` memory. Border pixels are handled by clamping to the nearest edge pixel. The kernel weights are normalized on the host before upload via `cudaMemcpyToSymbol`.
 
-Results:
+Results for kernel size 7:
 
 ![Blur grid](assets/blur_grid.png)
 

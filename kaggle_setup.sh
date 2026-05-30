@@ -13,7 +13,7 @@ echo "deb http://apt.llvm.org/jammy/ llvm-toolchain-jammy-18 main" \
     > /etc/apt/sources.list.d/llvm.list
 
 apt-get update -qq
-apt-get install -y cmake clangd-18 libopencv-dev ninja-build
+apt-get install -y cmake clangd-18 clang-format libopencv-dev ninja-build
 ln -sf /usr/bin/clangd-18 /usr/local/bin/clangd
 
 # uv + python deps

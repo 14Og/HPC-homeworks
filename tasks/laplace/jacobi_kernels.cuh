@@ -1,3 +1,5 @@
+#ifndef TASKS_LAPLACE_JACOBI_KERNELS_CUH_
+#define TASKS_LAPLACE_JACOBI_KERNELS_CUH_
 #include <cuda_runtime.h>
 
 namespace Kernels {
@@ -50,3 +52,5 @@ __global__ void blockMaxDiff(const float *aCurr, const float *aNext, float *bloc
 }
 
 }; // namespace Kernels
+
+#endif /* TASKS_LAPLACE_JACOBI_KERNELS_CUH_ */

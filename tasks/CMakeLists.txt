@@ -1,12 +1,13 @@
-set(TASKS laplace filter)
-set(OPENCV_TASKS filter)
+set(TASKS laplace filter histogram)
+set(OPENCV_TASKS filter histogram)
 
 add_compile_definitions(
     OUT_DIR="${PROJECT_SOURCE_DIR}/assets"
     MEDIA_DIR="${PROJECT_SOURCE_DIR}/media"
+    BLUR_DIR="${PROJECT_SOURCE_DIR}/assets/blur"
+    HIST_DIR="${PROJECT_SOURCE_DIR}/assets/hist"
+    GRAY_DIR="${PROJECT_SOURCE_DIR}/assets/gray"
 )
-
-
 
 foreach(TASK ${TASKS})
     add_executable(${TASK} ${TASK}/${TASK}.cu)
