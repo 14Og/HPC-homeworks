@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.24)
 project(HW3 C CXX CUDA)
 
+find_package(Eigen3 3.4 REQUIRED NO_MODULE)
+
 set(CMAKE_C_STANDARD 23)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CUDA_STANDARD 17)
@@ -24,3 +26,6 @@ set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   ${FLAGS_COMMON}")
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 
 add_subdirectory(tasks)
+
+enable_testing()
+add_subdirectory(tests)
