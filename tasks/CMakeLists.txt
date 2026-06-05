@@ -1,13 +1,12 @@
-set(TASKS laplace filter histogram)
-set(OPENCV_TASKS filter histogram)
+set(TASKS matmul)
 
-add_compile_definitions(
-    OUT_DIR="${PROJECT_SOURCE_DIR}/assets"
-    MEDIA_DIR="${PROJECT_SOURCE_DIR}/media"
-    BLUR_DIR="${PROJECT_SOURCE_DIR}/assets/blur"
-    HIST_DIR="${PROJECT_SOURCE_DIR}/assets/hist"
-    GRAY_DIR="${PROJECT_SOURCE_DIR}/assets/gray"
-)
+# add_compile_definitions(
+#     OUT_DIR="${PROJECT_SOURCE_DIR}/assets"
+#     MEDIA_DIR="${PROJECT_SOURCE_DIR}/media"
+#     BLUR_DIR="${PROJECT_SOURCE_DIR}/assets/blur"
+#     HIST_DIR="${PROJECT_SOURCE_DIR}/assets/hist"
+#     GRAY_DIR="${PROJECT_SOURCE_DIR}/assets/gray"
+# )
 
 foreach(TASK ${TASKS})
     add_executable(${TASK} ${TASK}/${TASK}.cu)
@@ -15,6 +14,3 @@ foreach(TASK ${TASKS})
     target_include_directories(${TASK} PRIVATE ${CMAKE_SOURCE_DIR}/tasks)
 endforeach()
 
-foreach(TASK ${OPENCV_TASKS})
-    target_link_libraries(${TASK} PRIVATE ${OPENCV_LIBS})
-endforeach()
