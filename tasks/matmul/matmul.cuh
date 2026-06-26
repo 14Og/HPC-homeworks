@@ -2,6 +2,7 @@
 #define TASKS_MATMUL_MATMUL_CUH_
 
 #include "Eigen/Dense"
+#include <stdexcept>
 
 template<typename T>
 class MatMulWrapper {
@@ -25,13 +26,27 @@ class MatMulWrapper {
 
 	void download() // Download device matrix to host
 	{
-        CUDA_CHECK(cudaMemcpy(matrix, ))
+        CUDA_CHECK(cudaMemcpy(matrix.data(), dMatrix, cudaMemcpyDeviceToHost));
 	}
 
 	size_t numBytes()
 	{
 		return rows * cols * sizeof(T);
 	}
+
+    float *matrixData()
+    {
+        if (!matrix)
+            throw std::runtime_error("MatMulWrapper::matrixData(): empty host matrix");
+        return matrix.data();
+    }
+    
+    float *deviceMatrixData()
+    {
+        if (!dMatrix)
+            throw std::runtime_error("MatMulWrapper::deviceMatrixData(): empty host matrix");
+        return dMatrix;
+    }
 
 private:
     size_t rows{0};
