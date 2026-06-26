@@ -14,7 +14,7 @@ static constexpr auto kEmptyInit  = EmptyInit();
 template<typename T>
 class MatMulWrapper {
 
-	using MatT = Eigen::Matrix<T, Eigen::Dynamic, Eigen::RowMajor>;
+	using MatT = Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
 
 	MatMulWrapper(size_t aRows, size_t aCols) : rows(aRows), cols(aCols)
 	{
@@ -37,6 +37,12 @@ public:
 	MatMulWrapper(MatMulWrapper &&)                 = delete;
 	MatMulWrapper &operator=(MatMulWrapper &&)      = delete;
 
+    ~MatMulWrapper()
+    {
+        if (dMatrix)
+            cudaFree(dMatrix);
+    }
+
 	void upload() // Upload host matrix to device
 	{
 		CUDA_CHECK(cudaMemcpy(dMatrix, matrix.data(), numBytes(), cudaMemcpyHostToDevice));
@@ -51,6 +57,8 @@ public:
 	{
 		return rows * cols * sizeof(T);
 	}
+
+
 
 public:
 	size_t rows{0};
