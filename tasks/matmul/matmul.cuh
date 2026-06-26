@@ -10,24 +10,26 @@ class MatMulWrapper {
 
     MatMulWrapper(size_t aRows, size_t aCols): rows(aRows), cols(aCols), matrix(MatT::Random(aRows, aCols))
     {   
-        
+        CUDA_CHECK(cudaMalloc(&dMatrix, numBytes()));
     }
+
 	MatMulWrapper(const MatMulWrapper &)            = delete;
 	MatMulWrapper &operator=(const MatMulWrapper &) = delete;
 	MatMulWrapper(MatMulWrapper &&)                 = delete;
 	MatMulWrapper &operator=(MatMulWrapper &&)      = delete;
 
-	void upload()
+	void upload() // Upload host matrix to device
 	{
 	}
 
-	void download()
+	void download() // Download device matrix to host
 	{
+
 	}
 
 	size_t numBytes()
 	{
-		return 0;
+		return rows * cols * sizeof(T);
 	}
 
 private:
