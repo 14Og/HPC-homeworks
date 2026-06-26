@@ -5,13 +5,18 @@ static constexpr dim3 kBlock(16, 16);
 
 int main()
 {
-    MatMulWrapper<float> A(100, 100, kRandomInit);
-    MatMulWrapper<float> B(100, 100, kRandomInit);
-    MatMulWrapper<float> C(100, 100, kEmptyInit);
+	MatMulWrapper<float> A(100, 100, kRandomInit);
+	MatMulWrapper<float> B(100, 100, kRandomInit);
+	MatMulWrapper<float> C(100, 100, kEmptyInit);
 
-    A.upload();
-    B.upload();
+    auto Cref = A * B;
 
-    Kernels::matMulNaive(A.matrix.data(), B.matrix.data(), C.dMatrix, A.rows, A.cols, B.cols);
+	A.upload();
+	B.upload();
+
+	dim3 grid((C.cols + kBlock.x - 1) / kBlock.x, (A.rows + kBlock.y - 1) / kBlock.y);
+	Kernels::matMulNaive<<<kBlock, grid>>>(
+		A.matrix.data(), B.matrix.data(), C.dMatrix, A.rows, A.cols, B.cols);
+
 
 }
