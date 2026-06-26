@@ -3,18 +3,18 @@
 
 #include "Eigen/Dense"
 
+#include "check.cuh"
+
+
+struct RandomInit {};
+struct EmptyInit {};
+static constexpr auto kRandomInit = RandomInit();
+static constexpr auto kEmptyInit  = EmptyInit();
+
 template<typename T>
 class MatMulWrapper {
 
 	using MatT = Eigen::Matrix<T, Eigen::Dynamic, Eigen::RowMajor>;
-	enum class Init { EMPTY, RANDOM };
-
-	struct RandomInit {};
-	struct EmptyInit {};
-
-public:
-	static constexpr auto kRandomInit = RandomInit();
-	static constexpr auto kEmptyInit  = EmptyInit();
 
 	MatMulWrapper(size_t aRows, size_t aCols) : rows(aRows), cols(aCols)
 	{
@@ -22,16 +22,14 @@ public:
 	}
 
 public:
-	MatMulWrapper(size_t aRows, size_t aCols, RandomInit) :
-		MatMulWrapper(aRows, aCols)
+	MatMulWrapper(size_t aRows, size_t aCols, RandomInit) : MatMulWrapper(aRows, aCols)
 	{
-        matrix = MatT::Random(rows, cols);
+		matrix = MatT::Random(rows, cols);
 	}
 
-	MatMulWrapper(size_t aRows, size_t aCols, EmptyInit) :
-		MatMulWrapper(aRows, aCols)
+	MatMulWrapper(size_t aRows, size_t aCols, EmptyInit) : MatMulWrapper(aRows, aCols)
 	{
-        matrix.resize(rows, cols);
+		matrix.resize(rows, cols);
 	}
 
 	MatMulWrapper(const MatMulWrapper &)            = delete;
