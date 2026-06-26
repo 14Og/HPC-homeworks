@@ -8,7 +8,13 @@ template<typename T>
 class MatMulWrapper {
 
 	using MatT = Eigen::Matrix<T, Eigen::Dynamic, Eigen::RowMajor>;
+	enum class Init { EMPTY, RANDOM };
 
+public:
+	
+    static constexpr auto kRandomInit = Init::RANDOM;
+	static constexpr auto kEmptyInit  = Init::EMPTY;
+    
 public:
 	MatMulWrapper(size_t aRows, size_t aCols) :
 		rows(aRows), cols(aCols), matrix(MatT::Random(aRows, aCols))
