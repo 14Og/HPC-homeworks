@@ -2,7 +2,6 @@
 #define TASKS_MATMUL_MATMUL_CUH_
 
 #include "Eigen/Dense"
-#include <Eigen/src/Core/util/Constants.h>
 
 template<typename T>
 struct MatMulWrapper {
