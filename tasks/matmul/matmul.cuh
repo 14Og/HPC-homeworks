@@ -20,11 +20,12 @@ class MatMulWrapper {
 
 	void upload() // Upload host matrix to device
 	{
+        CUDA_CHECK(cudaMemcpy(dMatrix, matrix.data(), numBytes(), cudaMemcpyHostToDevice));
 	}
 
 	void download() // Download device matrix to host
 	{
-
+        CUDA_CHECK(cudaMemcpy(matrix, ))
 	}
 
 	size_t numBytes()
