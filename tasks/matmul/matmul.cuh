@@ -2,7 +2,6 @@
 #define TASKS_MATMUL_MATMUL_CUH_
 
 #include "Eigen/Dense"
-#include <stdexcept>
 
 template<typename T>
 class MatMulWrapper {
@@ -10,25 +9,29 @@ class MatMulWrapper {
 	using MatT = Eigen::Matrix<T, Eigen::Dynamic, Eigen::RowMajor>;
 	enum class Init { EMPTY, RANDOM };
 
-    struct RandomInit {};
-    struct EmptyInit {};
-    
+	struct RandomInit {};
+	struct EmptyInit {};
+
 public:
+	static constexpr auto kRandomInit = RandomInit();
+	static constexpr auto kEmptyInit  = EmptyInit();
 
-    static constexpr auto kRandomInit = RandomInit();
-    static constexpr auto kEmptyInit = EmptyInit();
-
-
-    MatMulWrapper()
-    {
-        CUDA_CHECK(cudaMalloc(&dMatrix, numBytes()));
-    }
+	MatMulWrapper(size_t aRows, size_t aCols) : rows(aRows), cols(aCols)
+	{
+		CUDA_CHECK(cudaMalloc(&dMatrix, numBytes()));
+	}
 
 public:
 	MatMulWrapper(size_t aRows, size_t aCols, RandomInit) :
-		rows(aRows), cols(aCols), matrix(MatT::Random(aRows, aCols))
+		MatMulWrapper(aRows, aCols)
 	{
-		CUDA_CHECK(cudaMalloc(&dMatrix, numBytes()));
+        matrix = MatT::Random(rows, cols);
+	}
+
+	MatMulWrapper(size_t aRows, size_t aCols, EmptyInit) :
+		MatMulWrapper(aRows, aCols)
+	{
+        matrix.resize(rows, cols);
 	}
 
 	MatMulWrapper(const MatMulWrapper &)            = delete;
