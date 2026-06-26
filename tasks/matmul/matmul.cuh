@@ -50,7 +50,7 @@ public:
 
 	void download() // Download device matrix to host
 	{
-		CUDA_CHECK(cudaMemcpy(matrix.data(), dMatrix, cudaMemcpyDeviceToHost));
+		CUDA_CHECK(cudaMemcpy(matrix.data(), dMatrix, numBytes(), cudaMemcpyDeviceToHost));
 	}
 
 	size_t numBytes()
