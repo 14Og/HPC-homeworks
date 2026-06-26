@@ -10,13 +10,22 @@ class MatMulWrapper {
 	using MatT = Eigen::Matrix<T, Eigen::Dynamic, Eigen::RowMajor>;
 	enum class Init { EMPTY, RANDOM };
 
-public:
-	
-    static constexpr auto kRandomInit = Init::RANDOM;
-	static constexpr auto kEmptyInit  = Init::EMPTY;
+    struct RandomInit {};
+    struct EmptyInit {};
     
 public:
-	MatMulWrapper(size_t aRows, size_t aCols) :
+
+    static constexpr auto kRandomInit = RandomInit();
+    static constexpr auto kEmptyInit = EmptyInit();
+
+
+    MatMulWrapper()
+    {
+        CUDA_CHECK(cudaMalloc(&dMatrix, numBytes()));
+    }
+
+public:
+	MatMulWrapper(size_t aRows, size_t aCols, RandomInit) :
 		rows(aRows), cols(aCols), matrix(MatT::Random(aRows, aCols))
 	{
 		CUDA_CHECK(cudaMalloc(&dMatrix, numBytes()));
